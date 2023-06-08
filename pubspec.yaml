@@ -42,6 +42,8 @@ dependencies:
   serial_port_win32: ^0.7.0
   libserialport: ^0.3.0+1
   convert: ^3.1.1
+  flutter_spinkit: ^5.1.0
+  future_progress_dialog: ^0.2.1
 #  awesome_dialog: ^3.1.0
 dev_dependencies:
   flutter_test:
