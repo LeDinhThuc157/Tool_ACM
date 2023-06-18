@@ -32,13 +32,26 @@ class _HomeState extends State<Home>{
   // var com = TextEditingController();
   String? selectedComLabel;
   String? selectedBaud = '9600';
-  final List<String> comPorts = SerialPort.getAvailablePorts();
+  //final List<String> comPorts = SerialPort.getAvailablePorts();
   final List<String> Baud = List.castFrom(['9600', '19200', '38400', '115200']);
   List<int> data_save = [];
   var intValue;
   String filePathOpen = '';
   String filePathSave = '';
   int page  = 0;
+
+  List<String> availablePorts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    initPorts();
+  }
+
+  void initPorts() {
+    setState(() =>  availablePorts = SerialPort.getAvailablePorts());
+  }
+
   _Load_Document() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -3704,25 +3717,35 @@ class _HomeState extends State<Home>{
                     ),),
                   SizedBox(width: 20*widthR,
                   ),
-                  Container(
-                    height: 100*heightR,
-                    width: 300*widthR,
-                    child: DropdownButton<String>(
-                      value: selectedComLabel == null ? comPorts[0]: selectedComLabel, // Giá trị mặc định
-                      items: comPorts.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text('$value'),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedComLabel = newValue;
-                          print(selectedComLabel);
-                        });
-                        //print('Selected COM Port: $newValue');
-                      },
-                    ),),
+                  Row(
+
+                    children: [
+                      Container(
+                        height: 100*heightR,
+                        width: 300*widthR,
+                        child: DropdownButton<String>(
+                          ///onTap: initPorts,
+                          value: selectedComLabel == null ? availablePorts[0]: selectedComLabel, // Giá trị mặc định
+                          items: availablePorts.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text('$value'),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedComLabel = newValue;
+                            });
+                            //print('Selected COM Port: $newValue');
+                          },
+                        ),),
+                      IconButton(
+                          onPressed: (){initPorts();},
+                          icon: const Icon(Icons.refresh),
+                      ),
+                    ]
+
+                  ),
                   SizedBox(width: 20*widthR,),
                 ],
               ),
