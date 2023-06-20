@@ -96,6 +96,7 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
                 Timer timeoutTimer;
 
                 if((intValue/n).toInt() > 0){
+                  bool check_read_only = true;
                   for(int k = 0; k < (intValue/n).toInt();k++){
                     // String byte3 = (k*n).toRadixString(16).padLeft(2, '0').padRight(4, '0');
                     int number = (k*n);
@@ -207,6 +208,7 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
                             data_save.addAll(_value);
                           }
                           else{
+                            check_read_only = false;
                             check_read = false;
                             Error_Read ='Mảng $lan: Checksum sai';
                             return;
@@ -214,11 +216,13 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
 
                         }
                         else{
+                          check_read_only = false;
                           check_read = false;
                           Error_Read = 'Mảng $lan: Tin tức sai cú pháp';
                           return;
                         }
                       }).catchError((error) {
+                        check_read_only = false;
                         check_read = false;
                         Error_Read = 'Mảng $lan: $error';
                         return;
@@ -343,24 +347,28 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
                                 replaceArrayInFile(filePathSave,'Mang${lan.toString()}',data_save);
                               }
                               else{
+                                check_read_only = false;
                                 check_read = false;
                                 Error_Read = 'Mảng $lan: Độ dài mảng thu được không đúng';
                                 return;
                               }
                             }
                             else{
+                              check_read_only =false;
                               check_read = false;
                               Error_Read = 'Mảng $lan: Checksum sai';
                               return;
                             }
 
                           }else{
+                            check_read_only = false;
                             check_read = false;
                             Error_Read = 'Mảng $lan: Tin tức sai cú pháp';
                             return;
                           }
                         }).catchError((error) {
                           // Xử lý lỗi từ Completer
+                          check_read_only = false;
                           check_read = false;
                           Error_Read = 'Mảng $lan: $error';
                         });
@@ -371,7 +379,10 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
 
 
                     }
-
+                    if(check_read_only == false){
+                      print("Lỗi Thoát đi!");
+                      return;
+                    }
 
                   }
                   if(intValue%n == 0){

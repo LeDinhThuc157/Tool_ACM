@@ -71,13 +71,9 @@ class _NotificationDialogWriteState extends State<NotificationDialogWrite> {
         List<String> hex20List = [];
 
         print("Start ");
-        try{
-          for (int i = 0; i < hex20.length; i += 2) {
-            String hexValue = hex20.substring(i, i + 2);
-            hex20List.add(hexValue);
-          }
-        }catch(e){
-          print(e);
+        for (int i = 0; i < hex20.length; i += 2) {
+          String hexValue = hex20.substring(i, i + 2);
+          hex20List.add(hexValue);
         }
         print("Ban tin hex20List: $hex20List");
 

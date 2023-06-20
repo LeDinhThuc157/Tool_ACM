@@ -50,6 +50,9 @@ class _HomeState extends State<Home>{
 
   void initPorts() {
     setState(() =>  availablePorts = SerialPort.getAvailablePorts());
+    setState(() {
+      selectedComLabel = availablePorts[0];
+    });
   }
 
   _Load_Document() async {
@@ -60,7 +63,9 @@ class _HomeState extends State<Home>{
       String path = file.path;
       String convertedPath = path.replaceAll(r'\', '/');
       print("Converted: $convertedPath");
-      filePathOpen = convertedPath;
+      setState(() {
+        filePathOpen = convertedPath;
+      });
       arrays = readArraysFromFile(convertedPath);
       print("Datamap: $arrays");
     } else {
@@ -76,7 +81,10 @@ class _HomeState extends State<Home>{
       String path = file.path;
       String convertedPath = path.replaceAll(r'\', '/');
       print("Converted: $convertedPath");
-      filePathSave = convertedPath;
+      setState(() {
+        filePathSave = convertedPath;
+      });
+
     } else {
       // User canceled the picker
     }
@@ -99,140 +107,110 @@ class _HomeState extends State<Home>{
         ReadIntervalTimeout: 1,
         ReadTotalTimeoutConstant: 2
     );
-    try {
-      data_save = [];
-      if (port.isOpened) {
-        await port.writeBytesFromUint8List(request);
+    data_save = [];
+    if (port.isOpened) {
+      await port.writeBytesFromUint8List(request);
 
-        List<String> hexList = [];
-        intValue = 0;
-        // Thiết lập thời gian chờ là 5 giây
-        const timeoutDuration = Duration(seconds: 5);
-        // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
-        Completer<List<int>> completer = Completer<List<int>>();
-        // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
-        Timer timeoutTimer = Timer(timeoutDuration, () {
-          // Hủy bỏ Completer nếu thời gian chờ kết thúc
-          if (!completer.isCompleted) {
-            completer.completeError('Timeout'); // Gửi một lỗi hoặc giá trị tùy ý để đánh dấu thời gian chờ kết thúc
-          }
-        });
-        port.readBytesOnListen(8, (value) async {
-          // Hủy bỏ Timer nếu nhận được dữ liệu trước thời gian chờ kết thúc
-          if (!timeoutTimer.isActive) {
-            return; // Không làm gì nếu đã hết thời gian chờ
-          }
-          // Hoàn thành Completer nếu nhận được dữ liệu
-          if (!completer.isCompleted) {
-            completer.complete(value); // Gửi dữ liệu tới Completer
-          }
-        });
-        // Đợi hoặc xử lý kết quả từ Completer
-        try{
-          await completer.future.then((data) async {
-            // Xử lý dữ liệu thành công
-            print('Received data: $data');
-            hexList = [];
-            for (var byte in data) {
-              String hex = byte.toRadixString(16).padLeft(2, '0');
-              hexList.add(hex);
-            }
-            print(hexList);
-            int S = 0;
-            for (int hex = 0; hex < hexList.length - 2; hex++) {
-              int hexValue = int.parse(hexList[hex], radix: 16);
-              S += hexValue;
-            }
-            while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
-              S = S - 256;
-            }
-            String sum = S.toRadixString(16);
-            if(hexList[0] == '01' && hexList[1] == '11' && hexList[6] == '02'){
-              if(sum == hexList[5]){
-                BanTin11 = hexList;
-                await _BanTin2(intValue, hexList, mang, port);
-              }
-              else{
-                Navigator.of(context).pop();
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Thông báo'),
-                      content: Text('Error: Checksum sai'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: Text('Đóng'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-                return;
-              }
-            }
-            else{
-              Navigator.of(context).pop();
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Thông báo'),
-                    content: Text('Error: Bản tin sai cú pháp'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('Đóng'),
-                      ),
-                    ],
-                  );
-                },
-              );
-              return;
-            }
-          }).
-          catchError((error) {
-            // Xử lý lỗi từ Completer
-            if(error == 'Timeout'){
-              Navigator.of(context).pop();
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Thông báo'),
-                    content: Text('Error: $error'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('Đóng'),
-                      ),
-                    ],
-                  );
-                },
-              );
-              return;
-            }
-            print('Error: $error');
-          });
-        }catch(e){
-
+      List<String> hexList = [];
+      intValue = 0;
+      // Thiết lập thời gian chờ là 5 giây
+      const timeoutDuration = Duration(seconds: 5);
+      // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
+      Completer<List<int>> completer = Completer<List<int>>();
+      // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
+      Timer timeoutTimer = Timer(timeoutDuration, () {
+        // Hủy bỏ Completer nếu thời gian chờ kết thúc
+        if (!completer.isCompleted) {
+          completer.completeError('Timeout'); // Gửi một lỗi hoặc giá trị tùy ý để đánh dấu thời gian chờ kết thúc
         }
-      }
-      else {
+      });
+      port.readBytesOnListen(7, (value) async {
+        // Hủy bỏ Timer nếu nhận được dữ liệu trước thời gian chờ kết thúc
+        if (!timeoutTimer.isActive) {
+          return; // Không làm gì nếu đã hết thời gian chờ
+        }
+        // Hoàn thành Completer nếu nhận được dữ liệu
+        if (!completer.isCompleted) {
+          completer.complete(value); // Gửi dữ liệu tới Completer
+        }
+      });
+      // Đợi hoặc xử lý kết quả từ Completer
+      await completer.future.then((data) async {
+        // Xử lý dữ liệu thành công
+        print('Received data: $data');
+        hexList = [];
+        for (var byte in data) {
+          String hex = byte.toRadixString(16).padLeft(2, '0');
+          hexList.add(hex);
+        }
+        print('data $hexList');
+        int S = 0;
+        for (int hex = 0; hex < hexList.length - 2; hex++) {
+          int hexValue = int.parse(hexList[hex], radix: 16);
+          S += hexValue;
+        }
+        while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
+          S = S - 256;
+        }
+        String sum = S.toRadixString(16);
+        if(hexList[0] == '01' && hexList[1] == '11' && hexList[6] == '02'){
+          if(sum == hexList[5]){
+            BanTin11 = hexList;
+            await _BanTin2(intValue, hexList, mang, port);
+          }
+          else{
+            Navigator.of(context).pop();
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Thông báo'),
+                  content: Text('Error: Checksum sai'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Đóng'),
+                    ),
+                  ],
+                );
+              },
+            );
+            return;
+          }
+        }
+        else{
+          Navigator.of(context).pop();
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Thông báo'),
+                content: Text('Error: Bản tin sai cú pháp'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('Đóng'),
+                  ),
+                ],
+              );
+            },
+          );
+          return;
+        }
+      }).
+      catchError((error) {
+        // Xử lý lỗi từ Completer
         Navigator.of(context).pop();
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
               title: Text('Thông báo'),
-              content: Text('Serial port is not open'),
+              content: Text('Error: $error'),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -245,11 +223,30 @@ class _HomeState extends State<Home>{
           },
         );
         return;
-        print('Serial port is not open');
-      }
-
-    } catch (e) {
-      print('Error: $e');
+        print('Error: $error');
+      });
+    }
+    else {
+      Navigator.of(context).pop();
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Thông báo'),
+            content: Text('Serial port is not open'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Đóng'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+      print('Serial port is not open');
     }
   }
 
@@ -265,6 +262,7 @@ class _HomeState extends State<Home>{
     Timer timeoutTimer;
 
     if((intValue/n).toInt() > 0){
+      bool check_read_only = true;
       for(int k = 0; k < (intValue/n).toInt();k++){
         // String byte3 = (k*n).toRadixString(16).padLeft(2, '0').padRight(4, '0');
         int number = (k*n);
@@ -294,14 +292,11 @@ class _HomeState extends State<Home>{
         List<String> hex1List = [];
 
         print("Start ");
-        try{
-          for (int i = 0; i < hex1.length; i += 2) {
-            String hexValue = hex1.substring(i, i + 2);
-            hex1List.add(hexValue);
-          }
-        }catch(e){
-          print(e);
+        for (int i = 0; i < hex1.length; i += 2) {
+          String hexValue = hex1.substring(i, i + 2);
+          hex1List.add(hexValue);
         }
+
         // print("Ban tin 1: $hex1List");
 
         for (var hex in hex1List) {
@@ -377,6 +372,7 @@ class _HomeState extends State<Home>{
                  print("Gia tri nhan duoc 0:$_value");
               }
               else{
+                 check_read_only = false;
                 Navigator.of(context).pop();
                 showDialog(
                   context: context,
@@ -395,12 +391,12 @@ class _HomeState extends State<Home>{
                     );
                   },
                 );
-
                 return;
               }
 
             }
             else{
+              check_read_only = false;
               Navigator.of(context).pop();
               showDialog(
                 context: context,
@@ -419,34 +415,31 @@ class _HomeState extends State<Home>{
                   );
                 },
               );
-
               return;
             }
           }).catchError((error) {
             // Xử lý lỗi từ Completer
             print('Error: $error');
-            if(error == 'Timeout'){
-              Navigator.of(context).pop();
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Thông báo'),
-                    content: Text('Error: $error'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('Đóng'),
-                      ),
-                    ],
-                  );
-                },
-              );
-
-              return;
-            }
+            check_read_only = false;
+            Navigator.of(context).pop();
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Thông báo'),
+                  content: Text('Error: $error'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Đóng'),
+                    ),
+                  ],
+                );
+              },
+            );
+            return;
           });
         }finally {
           completer1 = Completer<List<int>>();
@@ -486,13 +479,9 @@ class _HomeState extends State<Home>{
 
           print("Banr tin cuoi");
           print("Kiem tra Hex1:$hex1");
-          try{
-            for (int i = 0; i < hex1.length; i += 2) {
-              String hexValue = hex1.substring(i, i + 2);
-              hex1List.add(hexValue);
-            }
-          }catch(e){
-            print(e);
+          for (int i = 0; i < hex1.length; i += 2) {
+            String hexValue = hex1.substring(i, i + 2);
+            hex1List.add(hexValue);
           }
 
           for (var hex in hex1List) {
@@ -587,6 +576,7 @@ class _HomeState extends State<Home>{
                     );
                   }
                   else{
+                    check_read_only = false;
                     Navigator.of(context).pop();
                     showDialog(
                       context: context,
@@ -609,6 +599,7 @@ class _HomeState extends State<Home>{
                   }
                 }
                 else{
+                  check_read_only = false;
                   Navigator.of(context).pop();
                   showDialog(
                     context: context,
@@ -631,6 +622,7 @@ class _HomeState extends State<Home>{
                 }
 
               }else{
+                check_read_only = false;
                 Navigator.of(context).pop();
                 showDialog(
                   context: context,
@@ -653,27 +645,26 @@ class _HomeState extends State<Home>{
               }
             }).catchError((error) {
               // Xử lý lỗi từ Completer
-              if(error == 'Timeout'){
-                Navigator.of(context).pop();
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Thông báo'),
-                      content: Text('Error: $error'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: Text('Đóng'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-                return;
-              }
+              check_read_only = false;
+              Navigator.of(context).pop();
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Thông báo'),
+                    content: Text('Error: $error'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('Đóng'),
+                      ),
+                    ],
+                  );
+                },
+              );
+              return;
               print('Error: $error');
             });
           }finally {
@@ -683,8 +674,10 @@ class _HomeState extends State<Home>{
 
 
         }
-
-
+        if(check_read_only == false){
+          print("Da gap loi thoai ngay!");
+          return;
+        }
       }
       if(intValue%n == 0 ){
         if(intValue == data_save.length){
@@ -782,14 +775,9 @@ class _HomeState extends State<Home>{
         String hex1 = '011206' +'${mang}'+'00'+'${_byte3}'+'${du}00';
         int S = 0;
         List<String> hex1List = [];
-
-        try{
-          for (int i = 0; i < hex1.length; i += 2) {
-            String hexValue = hex1.substring(i, i + 2);
-            hex1List.add(hexValue);
-          }
-        }catch(e){
-          print(e);
+        for (int i = 0; i < hex1.length; i += 2) {
+          String hexValue = hex1.substring(i, i + 2);
+          hex1List.add(hexValue);
         }
 
         for (var hex in hex1List) {
@@ -841,7 +829,7 @@ class _HomeState extends State<Home>{
               String hex = byte.toRadixString(16).padLeft(2, '0');
               List_hex.add(hex);
             }
-            print("....: $List_hex");
+            print("Data: $data \n List: $List_hex");
             S = 0;
             for (int hex = 0; hex < List_hex.length - 2; hex++) {
               int hexValue = int.parse(List_hex[hex], radix: 16);
@@ -951,28 +939,27 @@ class _HomeState extends State<Home>{
             }
           }).catchError((error) {
             // Xử lý lỗi từ Completer
-            if(error == 'Timeout'){
-              Navigator.of(context).pop();
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Thông báo'),
-                    content: Text('Error: $error'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('Đóng'),
-                      ),
-                    ],
-                  );
-                },
-              );
-              return;
-            }
+            Navigator.of(context).pop();
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Thông báo'),
+                  content: Text('Error: $error'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Đóng'),
+                    ),
+                  ],
+                );
+              },
+            );
             print('Error: $error');
+            return;
+
           });
         }finally {
           completer1 = Completer<List<int>>();
@@ -1046,7 +1033,9 @@ class _HomeState extends State<Home>{
             String hex = byte.toRadixString(16).padLeft(2, '0');
             hexList.add(hex);
           }
-          if(hexList[0] == '10'){
+          print(hexList);
+          Navigator.of(context).pop();
+          if(hexList[0] == '10' && hexList[1] == '06' && hexList[3] == '3c'){
             showDialog(
               context: context,
               builder: (BuildContext context) {
@@ -1065,10 +1054,29 @@ class _HomeState extends State<Home>{
               },
             );
           }
+          else{
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Thông báo'),
+                  content: Text('Kết nối ACM thất bại!'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Đóng'),
+                    ),
+                  ],
+                );
+              },
+            );
+            return;
+          }
 
 
         }).catchError((error) {
-          port.close();
           // Xử lý lỗi từ Completer
           showDialog(
             context: context,
@@ -1132,7 +1140,57 @@ class _HomeState extends State<Home>{
     }
 
   }
+  void disconnectToSerialPort() async {
+    final port = SerialPort(
+        "${selectedComLabel}",
+        BaudRate: int.parse(selectedBaud!),
+        openNow: false,
+        ByteSize: 8,
+        ReadIntervalTimeout: 1,
+        ReadTotalTimeoutConstant: 2
+    );
+    if(port.isOpened){
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Thông báo'),
+            content: Text('Đã ngắt kết nối!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Đóng'),
+              ),
+            ],
+          );
+        },
+      );
+      port.close();
 
+    }
+    else{
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Thông báo'),
+            content: Text('Đang không kết nối'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Đóng'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+  }
   Future Read_1() async{
     var x1 = [0x01, 0x10, 0x02, 0x01, 0x00, 0x14, 0x02];
      _sendModbusRequest(Uint8List.fromList(x1),'01');
@@ -1357,13 +1415,9 @@ class _HomeState extends State<Home>{
         List<String> hex20List = [];
 
         print("Start ");
-        try{
-          for (int i = 0; i < hex20.length; i += 2) {
-            String hexValue = hex20.substring(i, i + 2);
-            hex20List.add(hexValue);
-          }
-        }catch(e){
-          print(e);
+        for (int i = 0; i < hex20.length; i += 2) {
+          String hexValue = hex20.substring(i, i + 2);
+          hex20List.add(hexValue);
         }
         print("Ban tin hex20List: $hex20List");
 
@@ -1412,37 +1466,250 @@ class _HomeState extends State<Home>{
             completer.complete(value); // Gửi dữ liệu tới Completer
           }
         });
-        try{
-          await completer.future.then((data) async {
-            // Xử lý dữ liệu thành công
-            print('Received data: $data');
-            for (var byte in data) {
-              String hex = byte.toRadixString(16).padLeft(2, '0');
-              Response.add(hex);
-            }
-            print("Received data Res: $Response");
-            int S = 0;
-            for (int hex = 0; hex < Response.length - 2; hex++) {
-              int hexValue = int.parse(Response[hex], radix: 16);
-              S += hexValue;
-            }
-            while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
-              S = S - 256;
-            }
-            String sum = S.toRadixString(16);
-            String hex22 = '';
-            if(Response[0] == '01' && Response[1] == '21' && Response[6] == '02' && Response[2] == '02'){
-              if(sum == Response[5]){
-                if(Response[3] == '01'){
-                  const timeoutDuration = Duration(seconds: 5);
-                  // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
-                  Completer<List<int>> completer1 = Completer<List<int>>();
-                  // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
-                  Timer timeoutTimer;
-                  if((write_data!.length/n).toInt() > 0){
-                    for(int i = 0; i < ((write_data.length)/n).toInt() ;i++){
+        await completer.future.then((data) async {
+          // Xử lý dữ liệu thành công
+          print('Received data: $data');
+          for (var byte in data) {
+            String hex = byte.toRadixString(16).padLeft(2, '0');
+            Response.add(hex);
+          }
+          print("Received data Res: $Response");
+          int S = 0;
+          for (int hex = 0; hex < Response.length - 2; hex++) {
+            int hexValue = int.parse(Response[hex], radix: 16);
+            S += hexValue;
+          }
+          while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
+            S = S - 256;
+          }
+          String sum = S.toRadixString(16);
+          String hex22 = '';
+          if(Response[0] == '01' && Response[1] == '21' && Response[6] == '02' && Response[2] == '02'){
+            if(sum == Response[5]){
+              if(Response[3] == '01'){
+                const timeoutDuration = Duration(seconds: 5);
+                // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
+                Completer<List<int>> completer1 = Completer<List<int>>();
+                // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
+                Timer timeoutTimer;
+                if((write_data!.length/n).toInt() > 0){
+                  for(int i = 0; i < ((write_data.length)/n).toInt() ;i++){
 
-                      int number = (i*n);
+                    int number = (i*n);
+                    // Chuyển đổi số thành mã hex 2 byte
+                    String hexString = number.toRadixString(16).padLeft(4, '0');
+                    // Tạo danh sách 2 byte từ mã hex
+                    List<int> bytes = [];
+                    for (int i = 0; i < hexString.length; i += 2) {
+                      String hexByte = hexString.substring(i, i + 2);
+                      int byte = int.parse(hexByte, radix: 16);
+                      bytes.add(byte);
+                    }
+                    // Đảo ngược thứ tự byte
+                    List<int> reversedBytes = bytes.reversed.toList();
+                    // In mã hex với thứ tự byte thấp ở trước byte cao
+                    String byte3 = reversedBytes.map((byte) {
+                      String hex = byte.toRadixString(16).padLeft(2, '0');
+                      return hex;
+                    }).join('');
+                    print("Byte Vi tri: $byte3");
+                    hex22 = '01221A${mang}00${byte3}0A00';
+                    print(hex22);
+                    List<String> hexList22 = [];
+
+                    for (int number = i*n;number < (i*n+n); number++) {
+                      String hex = write_data[number].toRadixString(16).padLeft(4, '0');
+                      String swappedHex = hex.substring(2, 4) + hex.substring(0, 2);
+                      hexList22.add(swappedHex);
+                    }
+                    for (String data in hexList22){
+                      hex22 = hex22 + data;
+                    }
+                    print("Mã hex nhân được lần thứ $i là: $hex22");
+                    //
+                    List<String> hex22List = [];
+                    int S22=0;
+                    for (int i = 0; i < hex22.length; i += 2) {
+                      String hexValue = hex22.substring(i, i + 2);
+                      hex22List.add(hexValue);
+                    }
+                    for (var hex in hex22List) {
+                      int hexValue = int.parse(hex, radix: 16);
+                      S22 += hexValue;
+                    }
+                    while(int.parse(S22.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
+                      S22 = S22 - 256;
+                    }
+                    String sum = S22.toRadixString(16);
+                    sum.length %2 != 0 ? sum = '0'+sum:sum;
+                    var hex_22 = hex22+'${sum}02';
+                    ///
+                    List<String> Bantin22 = [];
+
+                    for (int i = 0; i < hex_22.length; i += 2) {
+                      String hexValue = hex_22.substring(i, i + 2);
+                      Bantin22.add(hexValue);
+                    }
+                    print("Ban tin 2: $Bantin22");
+                    List<int> intList = Bantin22.map((hex) => int.parse(hex, radix: 16)).toList();
+                    print("Bantin :$intList");
+                    await port.writeBytesFromUint8List(Uint8List.fromList(intList));
+                    List<String> Response23 = [];
+                    timeoutTimer = Timer(timeoutDuration, () {
+                      // Hủy bỏ Completer nếu thời gian chờ kết thúc
+                      if (!completer1.isCompleted) {
+                        completer1.completeError('Timeout'); // Gửi một lỗi hoặc giá trị tùy ý để đánh dấu thời gian chờ kết thúc
+                      }
+                    });
+                    port.readBytesOnListen(7, (value){
+                      // Hủy bỏ Timer nếu nhận được dữ liệu trước thời gian chờ kết thúc
+                      if (!timeoutTimer.isActive) {
+                        return; // Không làm gì nếu đã hết thời gian chờ
+                      }
+                      // Hoàn thành Completer nếu nhận được dữ liệu
+                      if (!completer1.isCompleted) {
+                        completer1.complete(value); // Gửi dữ liệu tới Completer
+                      }
+
+
+                    });
+                    try{
+                      await completer1.future.then((data) {
+                        for (var byte in data) {
+                          String hex = byte.toRadixString(16).padLeft(2, '0');
+                          Response23.add(hex);
+                        }
+                        int S = 0;
+                        for (int hex = 0; hex < Response23.length - 2; hex++) {
+                          int hexValue = int.parse(Response23[hex], radix: 16);
+                          S += hexValue;
+                        }
+                        while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
+                          S = S - 256;
+                        }
+                        String sum = S.toRadixString(16);
+                        if(Response23[0] == '01' && Response23[1] == '23' && Response23[6] == '02' && Response23[2] == '02'){
+                          if(sum == Response23[5]){
+                            if(Response23[3] == '01' && i == ((write_data!.length)/n).toInt() - 1 && write_data.length % n == 0){
+                              Navigator.of(context).pop();
+
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Thông báo'),
+                                    content: Text('Ghi thanh công'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text('Đóng'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                              return;
+                            }
+                            if(Response23[3] == '00'){
+                              Navigator.of(context).pop();
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Thông báo'),
+                                    content: Text('Lỗi'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text('Đóng'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                              return;
+                            }
+                            print("Response Hoàn thành");
+                          }else{
+                            Navigator.of(context).pop();
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Thông báo'),
+                                  content: Text('Error: Checksum sai'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text('Đóng'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                            return;
+                          }
+                        }
+                        else{
+                          Navigator.of(context).pop();
+
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text('Thông báo'),
+                                content: Text('Error: Bản tin sai cú pháp'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('Đóng'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                          return;
+                        }
+
+                      }).catchError((error) {
+                        print('Error: $error');
+                        Navigator.of(context).pop();
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Thông báo'),
+                              content: Text('Error: $error'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('Đóng'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        return;
+
+                      });
+                    }finally {
+                      completer1 = Completer<List<int>>();
+                      timeoutTimer.cancel();
+                    }
+
+                    /// Nếu có dư
+                    if(i == ((write_data.length)/n).toInt() - 1 && (write_data.length)%n != 0){
+                      int number = (((write_data.length)/n).toInt()*n);
                       // Chuyển đổi số thành mã hex 2 byte
                       String hexString = number.toRadixString(16).padLeft(4, '0');
                       // Tạo danh sách 2 byte từ mã hex
@@ -1459,12 +1726,14 @@ class _HomeState extends State<Home>{
                         String hex = byte.toRadixString(16).padLeft(2, '0');
                         return hex;
                       }).join('');
-                      print("Byte Vi tri: $byte3");
-                      hex22 = '01221A${mang}00${byte3}0A00';
-                      print(hex22);
+                      String length = (6+2*((write_data.length)%n)).toRadixString(16).padLeft(2, '0');
+                      print("Do dai phan tu:$length");
+                      print("Vi tri thu: $byte3");
+                      hex22 = '0122${length}${mang}00${byte3}${((write_data.length)%n).toRadixString(16).padLeft(2, '0')}00';
+                      print("Dư $hex22");
                       List<String> hexList22 = [];
 
-                      for (int number = i*n;number < (i*n+n); number++) {
+                      for (int number = (((write_data.length)/n).toInt()*n); number < write_data.length; number++) {
                         String hex = write_data[number].toRadixString(16).padLeft(4, '0');
                         String swappedHex = hex.substring(2, 4) + hex.substring(0, 2);
                         hexList22.add(swappedHex);
@@ -1472,7 +1741,7 @@ class _HomeState extends State<Home>{
                       for (String data in hexList22){
                         hex22 = hex22 + data;
                       }
-                      print("Mã hex nhân được lần thứ $i là: $hex22");
+                      print("Mã hex nhân được là: $hex22");
                       //
                       List<String> hex22List = [];
                       int S22=0;
@@ -1490,7 +1759,6 @@ class _HomeState extends State<Home>{
                       String sum = S22.toRadixString(16);
                       sum.length %2 != 0 ? sum = '0'+sum:sum;
                       var hex_22 = hex22+'${sum}02';
-                      ///
                       List<String> Bantin22 = [];
 
                       for (int i = 0; i < hex_22.length; i += 2) {
@@ -1537,7 +1805,7 @@ class _HomeState extends State<Home>{
                           String sum = S.toRadixString(16);
                           if(Response23[0] == '01' && Response23[1] == '23' && Response23[6] == '02' && Response23[2] == '02'){
                             if(sum == Response23[5]){
-                              if(Response23[3] == '01' && i == ((write_data!.length)/n).toInt() - 1 && write_data.length % n == 0){
+                              if(Response23[3] == '01'){
                                 Navigator.of(context).pop();
 
                                 showDialog(
@@ -1557,9 +1825,8 @@ class _HomeState extends State<Home>{
                                     );
                                   },
                                 );
-                                return;
                               }
-                              if(Response23[3] == '00'){
+                              else{
                                 Navigator.of(context).pop();
                                 showDialog(
                                   context: context,
@@ -1605,7 +1872,6 @@ class _HomeState extends State<Home>{
                           }
                           else{
                             Navigator.of(context).pop();
-
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
@@ -1628,442 +1894,6 @@ class _HomeState extends State<Home>{
 
                         }).catchError((error) {
                           print('Error: $error');
-                          if(error == 'Timeout'){
-                            Navigator.of(context).pop();
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text('Thông báo'),
-                                  content: Text('Error: $error'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: Text('Đóng'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                            return;
-                          }
-                        });
-                      }finally {
-                        completer1 = Completer<List<int>>();
-                        timeoutTimer.cancel();
-                      }
-
-                      /// Nếu có dư
-                      if(i == ((write_data.length)/n).toInt() - 1 && (write_data.length)%n != 0){
-                        int number = (((write_data.length)/n).toInt()*n);
-                        // Chuyển đổi số thành mã hex 2 byte
-                        String hexString = number.toRadixString(16).padLeft(4, '0');
-                        // Tạo danh sách 2 byte từ mã hex
-                        List<int> bytes = [];
-                        for (int i = 0; i < hexString.length; i += 2) {
-                          String hexByte = hexString.substring(i, i + 2);
-                          int byte = int.parse(hexByte, radix: 16);
-                          bytes.add(byte);
-                        }
-                        // Đảo ngược thứ tự byte
-                        List<int> reversedBytes = bytes.reversed.toList();
-                        // In mã hex với thứ tự byte thấp ở trước byte cao
-                        String byte3 = reversedBytes.map((byte) {
-                          String hex = byte.toRadixString(16).padLeft(2, '0');
-                          return hex;
-                        }).join('');
-                        String length = (6+2*((write_data.length)%n)).toRadixString(16).padLeft(2, '0');
-                        print("Do dai phan tu:$length");
-                        print("Vi tri thu: $byte3");
-                        hex22 = '0122${length}${mang}00${byte3}${((write_data.length)%n).toRadixString(16).padLeft(2, '0')}00';
-                        print("Dư $hex22");
-                        List<String> hexList22 = [];
-
-                        for (int number = (((write_data.length)/n).toInt()*n); number < write_data.length; number++) {
-                          String hex = write_data[number].toRadixString(16).padLeft(4, '0');
-                          String swappedHex = hex.substring(2, 4) + hex.substring(0, 2);
-                          hexList22.add(swappedHex);
-                        }
-                        for (String data in hexList22){
-                          hex22 = hex22 + data;
-                        }
-                        print("Mã hex nhân được là: $hex22");
-                        //
-                        List<String> hex22List = [];
-                        int S22=0;
-                        for (int i = 0; i < hex22.length; i += 2) {
-                          String hexValue = hex22.substring(i, i + 2);
-                          hex22List.add(hexValue);
-                        }
-                        for (var hex in hex22List) {
-                          int hexValue = int.parse(hex, radix: 16);
-                          S22 += hexValue;
-                        }
-                        while(int.parse(S22.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
-                          S22 = S22 - 256;
-                        }
-                        String sum = S22.toRadixString(16);
-                        sum.length %2 != 0 ? sum = '0'+sum:sum;
-                        var hex_22 = hex22+'${sum}02';
-                        List<String> Bantin22 = [];
-
-                        for (int i = 0; i < hex_22.length; i += 2) {
-                          String hexValue = hex_22.substring(i, i + 2);
-                          Bantin22.add(hexValue);
-                        }
-                        print("Ban tin 2: $Bantin22");
-                        List<int> intList = Bantin22.map((hex) => int.parse(hex, radix: 16)).toList();
-                        print("Bantin :$intList");
-                        await port.writeBytesFromUint8List(Uint8List.fromList(intList));
-                        List<String> Response23 = [];
-                        timeoutTimer = Timer(timeoutDuration, () {
-                          // Hủy bỏ Completer nếu thời gian chờ kết thúc
-                          if (!completer1.isCompleted) {
-                            completer1.completeError('Timeout'); // Gửi một lỗi hoặc giá trị tùy ý để đánh dấu thời gian chờ kết thúc
-                          }
-                        });
-                        port.readBytesOnListen(7, (value){
-                          // Hủy bỏ Timer nếu nhận được dữ liệu trước thời gian chờ kết thúc
-                          if (!timeoutTimer.isActive) {
-                            return; // Không làm gì nếu đã hết thời gian chờ
-                          }
-                          // Hoàn thành Completer nếu nhận được dữ liệu
-                          if (!completer1.isCompleted) {
-                            completer1.complete(value); // Gửi dữ liệu tới Completer
-                          }
-
-
-                        });
-                        try{
-                          await completer1.future.then((data) {
-                            for (var byte in data) {
-                              String hex = byte.toRadixString(16).padLeft(2, '0');
-                              Response23.add(hex);
-                            }
-                            int S = 0;
-                            for (int hex = 0; hex < Response23.length - 2; hex++) {
-                              int hexValue = int.parse(Response23[hex], radix: 16);
-                              S += hexValue;
-                            }
-                            while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
-                              S = S - 256;
-                            }
-                            String sum = S.toRadixString(16);
-                            if(Response23[0] == '01' && Response23[1] == '23' && Response23[6] == '02' && Response23[2] == '02'){
-                              if(sum == Response23[5]){
-                                if(Response23[3] == '01'){
-                                  Navigator.of(context).pop();
-
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: Text('Thông báo'),
-                                        content: Text('Ghi thanh công'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: Text('Đóng'),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                }
-                                else{
-                                  Navigator.of(context).pop();
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: Text('Thông báo'),
-                                        content: Text('Lỗi'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: Text('Đóng'),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                  return;
-                                }
-                                print("Response Hoàn thành");
-                              }else{
-                                Navigator.of(context).pop();
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: Text('Thông báo'),
-                                      content: Text('Error: Checksum sai'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Text('Đóng'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                                return;
-                              }
-                            }
-                            else{
-                              Navigator.of(context).pop();
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Thông báo'),
-                                    content: Text('Error: Bản tin sai cú pháp'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text('Đóng'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                              return;
-                            }
-
-                          }).catchError((error) {
-                            print('Error: $error');
-                            if(error == 'Timeout'){
-                              Navigator.of(context).pop();
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Thông báo'),
-                                    content: Text('Error: $error'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text('Đóng'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                              return;
-                            }
-                          });
-                        }finally {
-                          completer1 = Completer<List<int>>();
-                          timeoutTimer.cancel();
-                        }
-
-                      }
-                    }
-                  }
-                  else{
-                    int number = 0;
-                    // Chuyển đổi số thành mã hex 2 byte
-                    String hexString = number.toRadixString(16).padLeft(4, '0');
-                    // Tạo danh sách 2 byte từ mã hex
-                    List<int> bytes = [];
-                    for (int i = 0; i < hexString.length; i += 2) {
-                      String hexByte = hexString.substring(i, i + 2);
-                      int byte = int.parse(hexByte, radix: 16);
-                      bytes.add(byte);
-                    }
-                    // Đảo ngược thứ tự byte
-                    List<int> reversedBytes = bytes.reversed.toList();
-                    // In mã hex với thứ tự byte thấp ở trước byte cao
-                    String byte3 = reversedBytes.map((byte) {
-                      String hex = byte.toRadixString(16).padLeft(2, '0');
-                      return hex;
-                    }).join('');
-                    // Độ da mã length 6+2*n
-                    var length_22 = (6 + (write_data.length)*2).toRadixString(16).padLeft(2,'0');
-
-                    hex22 = '0122${length_22}${mang}00${byte3}${((write_data.length)%n).toRadixString(16).padLeft(2, '0')}00';
-                    print(hex22);
-                    List<String> hexList22 = [];
-
-                    for (int number = 0;number < ((write_data.length)%n); number++) {
-                      String hex = write_data[number].toRadixString(16).padLeft(4, '0');
-                      String swappedHex = hex.substring(2, 4) + hex.substring(0, 2);
-                      hexList22.add(swappedHex);
-                    }
-                    for (String data in hexList22){
-                      hex22 = hex22 + data;
-                    }
-                    print("Mã hex nhân được là: $hex22");
-                    List<String> hex22List = [];
-                    int S22=0;
-                    for (int i = 0; i < hex22.length; i += 2) {
-                      String hexValue = hex22.substring(i, i + 2);
-                      hex22List.add(hexValue);
-                    }
-                    for (var hex in hex22List) {
-                      int hexValue = int.parse(hex, radix: 16);
-                      S22 += hexValue;
-                    }
-                    while(int.parse(S22.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
-                      S22 = S22 - 256;
-                    }
-                    String sum = S22.toRadixString(16);
-                    sum.length %2 != 0 ? sum = '0'+sum:sum;
-                    var hex_22 = hex22+'${sum}02';
-                    ///
-                    List<String> Bantin22 = [];
-
-                    for (int i = 0; i < hex_22.length; i += 2) {
-                      String hexValue = hex_22.substring(i, i + 2);
-                      Bantin22.add(hexValue);
-                    }
-                    print("Ban tin 22 dữ: $Bantin");
-                    List<int> intList = Bantin22.map((hex) => int.parse(hex, radix: 16)).toList();
-
-                    await port.writeBytesFromUint8List(Uint8List.fromList(intList));
-
-                    // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
-                    timeoutTimer = Timer(timeoutDuration, () {
-                      // Hủy bỏ Completer nếu thời gian chờ kết thúc
-                      if (!completer1.isCompleted) {
-                        completer1.completeError('Timeout'); // Gửi một lỗi hoặc giá trị tùy ý để đánh dấu thời gian chờ kết thúc
-                      }
-                    });
-
-                    port.readBytesOnListen(7, (value){
-                      // Hủy bỏ Timer nếu nhận được dữ liệu trước thời gian chờ kết thúc
-                      if (!timeoutTimer.isActive) {
-                        return; // Không làm gì nếu đã hết thời gian chờ
-                      }
-                      // Hoàn thành Completer nếu nhận được dữ liệu
-                      if (!completer1.isCompleted) {
-                        completer1.complete(value); // Gửi dữ liệu tới Completer
-                      }
-
-                    });
-                    try{
-                      await completer1.future.then((data) {
-                        List<String> List_hex = [];
-                        for (var byte in data) {
-                          String hex = byte.toRadixString(16).padLeft(2, '0');
-                          List_hex.add(hex);
-                        }
-                        print("....: $List_hex");
-                        S = 0;
-                        for (int hex = 0; hex < List_hex.length - 2; hex++) {
-                          int hexValue = int.parse(List_hex[hex], radix: 16);
-                          S += hexValue;
-                        }
-                        while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
-                          S = S - 256;
-                        }
-                        String sum = S.toRadixString(16);
-                        if(List_hex[0] == '01' && List_hex[1] == '23' && List_hex[6] == '02' && List_hex[2] == '02'){
-                          if(sum == List_hex[List_hex.length-2]){
-                            if(List_hex[3] == '01'){
-                              Navigator.of(context).pop();
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Thông báo'),
-                                    content: Text('Ghi thanh công'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text('Đóng'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            }
-                            else{
-                              Navigator.of(context).pop();
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: Text('Thông báo'),
-                                    content: Text('Lỗi'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text('Đóng'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                              return;
-                            }
-                            print("Response Hoàn thành");
-                          }
-                          else{
-                            Navigator.of(context).pop();
-
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text('Thông báo'),
-                                  content: Text('Error: Checksum Sai'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: Text('Đóng'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                            return;
-                          }
-
-                        }
-                        else{
-                          Navigator.of(context).pop();
-
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text('Thông báo'),
-                                content: Text('Error: Tin tức sai cú pháp'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Text('Đóng'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                          return;
-                        }
-                      }).catchError((error) {
-                        // Xử lý lỗi từ Completer
-                        if(error == 'Timeout'){
                           Navigator.of(context).pop();
                           showDialog(
                             context: context,
@@ -2083,41 +1913,236 @@ class _HomeState extends State<Home>{
                             },
                           );
                           return;
-                        }
-                        print('Error: $error');
-                      });
-                    }finally {
-                      completer1 = Completer<List<int>>();
-                      timeoutTimer.cancel();
+                        });
+                      }finally {
+                        completer1 = Completer<List<int>>();
+                        timeoutTimer.cancel();
+                      }
+
                     }
                   }
-
                 }
                 else{
-                  Navigator.of(context).pop();
+                  int number = 0;
+                  // Chuyển đổi số thành mã hex 2 byte
+                  String hexString = number.toRadixString(16).padLeft(4, '0');
+                  // Tạo danh sách 2 byte từ mã hex
+                  List<int> bytes = [];
+                  for (int i = 0; i < hexString.length; i += 2) {
+                    String hexByte = hexString.substring(i, i + 2);
+                    int byte = int.parse(hexByte, radix: 16);
+                    bytes.add(byte);
+                  }
+                  // Đảo ngược thứ tự byte
+                  List<int> reversedBytes = bytes.reversed.toList();
+                  // In mã hex với thứ tự byte thấp ở trước byte cao
+                  String byte3 = reversedBytes.map((byte) {
+                    String hex = byte.toRadixString(16).padLeft(2, '0');
+                    return hex;
+                  }).join('');
+                  // Độ da mã length 6+2*n
+                  var length_22 = (6 + (write_data.length)*2).toRadixString(16).padLeft(2,'0');
 
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Thông báo'),
-                        content: Text('Lỗi'),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
+                  hex22 = '0122${length_22}${mang}00${byte3}${((write_data.length)%n).toRadixString(16).padLeft(2, '0')}00';
+                  print(hex22);
+                  List<String> hexList22 = [];
+
+                  for (int number = 0;number < ((write_data.length)%n); number++) {
+                    String hex = write_data[number].toRadixString(16).padLeft(4, '0');
+                    String swappedHex = hex.substring(2, 4) + hex.substring(0, 2);
+                    hexList22.add(swappedHex);
+                  }
+                  for (String data in hexList22){
+                    hex22 = hex22 + data;
+                  }
+                  print("Mã hex nhân được là: $hex22");
+                  List<String> hex22List = [];
+                  int S22=0;
+                  for (int i = 0; i < hex22.length; i += 2) {
+                    String hexValue = hex22.substring(i, i + 2);
+                    hex22List.add(hexValue);
+                  }
+                  for (var hex in hex22List) {
+                    int hexValue = int.parse(hex, radix: 16);
+                    S22 += hexValue;
+                  }
+                  while(int.parse(S22.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
+                    S22 = S22 - 256;
+                  }
+                  String sum = S22.toRadixString(16);
+                  sum.length %2 != 0 ? sum = '0'+sum:sum;
+                  var hex_22 = hex22+'${sum}02';
+                  ///
+                  List<String> Bantin22 = [];
+
+                  for (int i = 0; i < hex_22.length; i += 2) {
+                    String hexValue = hex_22.substring(i, i + 2);
+                    Bantin22.add(hexValue);
+                  }
+                  print("Ban tin 22 dữ: $Bantin");
+                  List<int> intList = Bantin22.map((hex) => int.parse(hex, radix: 16)).toList();
+
+                  await port.writeBytesFromUint8List(Uint8List.fromList(intList));
+
+                  // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
+                  timeoutTimer = Timer(timeoutDuration, () {
+                    // Hủy bỏ Completer nếu thời gian chờ kết thúc
+                    if (!completer1.isCompleted) {
+                      completer1.completeError('Timeout'); // Gửi một lỗi hoặc giá trị tùy ý để đánh dấu thời gian chờ kết thúc
+                    }
+                  });
+
+                  port.readBytesOnListen(7, (value){
+                    // Hủy bỏ Timer nếu nhận được dữ liệu trước thời gian chờ kết thúc
+                    if (!timeoutTimer.isActive) {
+                      return; // Không làm gì nếu đã hết thời gian chờ
+                    }
+                    // Hoàn thành Completer nếu nhận được dữ liệu
+                    if (!completer1.isCompleted) {
+                      completer1.complete(value); // Gửi dữ liệu tới Completer
+                    }
+
+                  });
+                  try{
+                    await completer1.future.then((data) {
+                      List<String> List_hex = [];
+                      for (var byte in data) {
+                        String hex = byte.toRadixString(16).padLeft(2, '0');
+                        List_hex.add(hex);
+                      }
+                      print("....: $List_hex");
+                      S = 0;
+                      for (int hex = 0; hex < List_hex.length - 2; hex++) {
+                        int hexValue = int.parse(List_hex[hex], radix: 16);
+                        S += hexValue;
+                      }
+                      while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
+                        S = S - 256;
+                      }
+                      String sum = S.toRadixString(16);
+                      if(List_hex[0] == '01' && List_hex[1] == '23' && List_hex[6] == '02' && List_hex[2] == '02'){
+                        if(sum == List_hex[List_hex.length-2]){
+                          if(List_hex[3] == '01'){
+                            Navigator.of(context).pop();
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Thông báo'),
+                                  content: Text('Ghi thanh công'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text('Đóng'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                          else{
+                            Navigator.of(context).pop();
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Thông báo'),
+                                  content: Text('Lỗi'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Text('Đóng'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                            return;
+                          }
+                          print("Response Hoàn thành");
+                        }
+                        else{
+                          Navigator.of(context).pop();
+
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text('Thông báo'),
+                                content: Text('Error: Checksum Sai'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('Đóng'),
+                                  ),
+                                ],
+                              );
                             },
-                            child: Text('Đóng'),
-                          ),
-                        ],
+                          );
+                          return;
+                        }
+
+                      }
+                      else{
+                        Navigator.of(context).pop();
+
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Thông báo'),
+                              content: Text('Error: Tin tức sai cú pháp'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('Đóng'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        return;
+                      }
+                    }).catchError((error) {
+                      // Xử lý lỗi từ Completer
+                      Navigator.of(context).pop();
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('Thông báo'),
+                            content: Text('Error: $error'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text('Đóng'),
+                              ),
+                            ],
+                          );
+                        },
                       );
-                    },
-                  );
-                  return;
+                      print('Error: $error');
+                      return;
+
+                    });
+                  }finally {
+                    completer1 = Completer<List<int>>();
+                    timeoutTimer.cancel();
+                  }
                 }
+
               }
               else{
-
                 Navigator.of(context).pop();
 
                 showDialog(
@@ -2125,7 +2150,7 @@ class _HomeState extends State<Home>{
                   builder: (BuildContext context) {
                     return AlertDialog(
                       title: Text('Thông báo'),
-                      content: Text('Error: Checksum sai'),
+                      content: Text('Lỗi'),
                       actions: [
                         TextButton(
                           onPressed: () {
@@ -2139,17 +2164,17 @@ class _HomeState extends State<Home>{
                 );
                 return;
               }
-
             }
             else{
 
               Navigator.of(context).pop();
+
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: Text('Thông báo'),
-                    content: Text('Error: Bản tin sai cú pháp'),
+                    content: Text('Error: Checksum sai'),
                     actions: [
                       TextButton(
                         onPressed: () {
@@ -2164,35 +2189,53 @@ class _HomeState extends State<Home>{
               return;
             }
 
-          }).catchError((error) {
-            // Xử lý lỗi từ Completer
-            if(error == 'Timeout'){
-              Navigator.of(context).pop();
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Thông báo'),
-                    content: Text('Error: $error'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('Đóng'),
-                      ),
-                    ],
-                  );
-                },
+          }
+          else{
+
+            Navigator.of(context).pop();
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Thông báo'),
+                  content: Text('Error: Bản tin sai cú pháp'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('Đóng'),
+                    ),
+                  ],
+                );
+              },
+            );
+            return;
+          }
+
+        }).catchError((error) {
+          // Xử lý lỗi từ Completer
+          Navigator.of(context).pop();
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Thông báo'),
+                content: Text('Error: $error'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('Đóng'),
+                  ),
+                ],
               );
-              return;
-            }
-            print('Error: $error');
-          });
-
-        }catch(e){
-
-        }
+            },
+          );
+          return;
+          print('Error: $error');
+        });
       }
       else {
         Navigator.of(context).pop();
@@ -2217,10 +2260,6 @@ class _HomeState extends State<Home>{
       }
 
     }
-
-
-
-
   }
   Future Write_1() async{
     Tool_Sopt('01');
@@ -3665,7 +3704,10 @@ class _HomeState extends State<Home>{
                       onSelected: (value) {
                         if (value == 'open') {
                           try {
-                            _Load_Document();
+                            setState(() {
+                              _Load_Document();
+                            });
+
                           } catch (e) {
                             print(e);
                           }
@@ -3673,7 +3715,10 @@ class _HomeState extends State<Home>{
                         if (value == 'save') {
                           // var save = (data_save.toString()).substring(1,(data_save.toString().length)-1);
                           // print("Gia tr luu dc là: $save");\
-                          _Load_Document_Save();
+                          setState(() {
+                            _Load_Document_Save();
+                          });
+
 
 
 
@@ -3750,7 +3795,23 @@ class _HomeState extends State<Home>{
                 ],
               ),
             ),
-            SizedBox(
+            Container(
+              height: 100*heightR,
+              width: 800*heightR,
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(5)
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SizedBox(),
+                  filePathSave == '' ? SizedBox() : Container(child: SelectableText("Read Path: $filePathSave")),
+                  SizedBox(),
+                  filePathOpen == '' ? SizedBox() : Container(child: SelectableText("Write Path: $filePathOpen")),
+                  SizedBox(),
+                ],
+              ),
             ),
             Container(
               height: 100*heightR,
@@ -3778,7 +3839,20 @@ class _HomeState extends State<Home>{
                         )
                     ),
                   ),
-
+                  Container(
+                    child: TextButton(
+                        onPressed: () {
+                          disconnectToSerialPort();
+                        },
+                        child: Text(
+                          "Disconect",
+                          style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold
+                          ),
+                        )
+                    ),
+                  ),
                   Container(
                     child: TextButton(
                         onPressed: () {
