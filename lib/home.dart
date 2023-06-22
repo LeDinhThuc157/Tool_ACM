@@ -824,6 +824,7 @@ class _HomeState extends State<Home>{
         });
         try{
           await completer1.future.then((data) {
+            print("$data");
             List<String> List_hex = [];
             for (var byte in data) {
               String hex = byte.toRadixString(16).padLeft(2, '0');
@@ -838,7 +839,7 @@ class _HomeState extends State<Home>{
             while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
               S = S - 256;
             }
-            String sum = S.toRadixString(16);
+            String sum = S.toRadixString(16).padLeft(2,'0');
             print("Sum: $sum");
             if(List_hex[0] == '01' && List_hex[1] == '13' && List_hex[List_hex.length-1] == '02'){
               if(sum == List_hex[List_hex.length-2]){
@@ -3719,9 +3720,6 @@ class _HomeState extends State<Home>{
                             _Load_Document_Save();
                           });
 
-
-
-
                         }
                       },
                       itemBuilder: (context) =>
@@ -3806,9 +3804,15 @@ class _HomeState extends State<Home>{
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   SizedBox(),
-                  filePathSave == '' ? SizedBox() : Container(child: SelectableText("Read Path: $filePathSave")),
+                  filePathSave == '' ? SizedBox() : Container(child: SelectableText("Read Path: $filePathSave",style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                      color: Colors.black
+                  ),)),
                   SizedBox(),
-                  filePathOpen == '' ? SizedBox() : Container(child: SelectableText("Write Path: $filePathOpen")),
+                  filePathOpen == '' ? SizedBox() : Container(child: SelectableText("Write Path: $filePathOpen",style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black
+                  ),)),
                   SizedBox(),
                 ],
               ),
