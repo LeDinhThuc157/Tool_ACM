@@ -44,7 +44,7 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
         List<String> hexList = [];
         int intValue = 0;
         // Thiết lập thời gian chờ là 5 giây
-        const timeoutDuration = Duration(seconds: 5);
+        const timeoutDuration = Duration(seconds: 2);
         // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
         Completer<List<int>> completer = Completer<List<int>>();
         // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
@@ -89,7 +89,7 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
                 int  n = 10;
                 intValue = int.parse(hexList[4]+hexList[3], radix: 16);
                 print("value: ${intValue/20}");
-                const timeoutDuration = Duration(seconds: 5);
+                const timeoutDuration = Duration(seconds: 2);
                 // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
                 Completer<List<int>> completer1 = Completer<List<int>>();
                 // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
@@ -333,7 +333,7 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
                           while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
                             S = S - 256;
                           }
-                          String sum = S.toRadixString(16);
+                          String sum = S.toRadixString(16).padLeft(2,'0');
                           if(List_hex[0] == '01' && List_hex[1] == '13' && List_hex[List_hex.length-1] == '02'){
                             if(sum == List_hex[List_hex.length-2]){
                               List<int> _value =[];
@@ -380,7 +380,7 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
 
                     }
                     if(check_read_only == false){
-                      print("Lỗi Thoát đi!");
+                      print("Đã gặp đi!");
                       return;
                     }
 
@@ -496,7 +496,7 @@ class _NotificationDialogReadState extends State<NotificationDialogRead> {
                         while(int.parse(S.toRadixString(16), radix: 16) > int.parse('FF', radix: 16)){
                           S = S - 256;
                         }
-                        String sum = S.toRadixString(16);
+                        String sum = S.toRadixString(16).padLeft(2,'0');
                         if(List_hex[0] == '01' && List_hex[1] == '13' && List_hex[List_hex.length-1] == '02'){
                           if(sum == List_hex[List_hex.length-2]){
                             List<int> _value =[];

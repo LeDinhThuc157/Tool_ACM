@@ -114,7 +114,7 @@ class _HomeState extends State<Home>{
       List<String> hexList = [];
       intValue = 0;
       // Thiết lập thời gian chờ là 5 giây
-      const timeoutDuration = Duration(seconds: 5);
+      const timeoutDuration = Duration(seconds: 2);
       // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
       Completer<List<int>> completer = Completer<List<int>>();
       // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
@@ -255,7 +255,7 @@ class _HomeState extends State<Home>{
     int  n = 10;
     intValue = int.parse(hexList[4]+hexList[3], radix: 16);
     print("value: ${intValue/n}");
-    const timeoutDuration = Duration(seconds: 5);
+    const timeoutDuration = Duration(seconds: 2);
     // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
     Completer<List<int>> completer1 = Completer<List<int>>();
     // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
@@ -341,7 +341,8 @@ class _HomeState extends State<Home>{
 
         });
         try{
-          await completer1.future.then((data) {
+          await completer1.future.then((data) async {
+
             print("Phan nguyen thu  ,,,,,,,,,,,,,,,,,,,,,,,,,, $k");
             // Xử lý dữ liệu thành công
             List<String> List_hex = [];
@@ -1006,7 +1007,7 @@ class _HomeState extends State<Home>{
         final Holding_Register = [0x10, 0x06, 0x00, 0x3C, 0x00, 0x01, 0x8B, 0x47];
 
         port.writeBytesFromUint8List(Uint8List.fromList(Holding_Register));
-        const timeoutDuration = Duration(seconds: 5);
+        const timeoutDuration = Duration(seconds: 2);
         // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
         Completer<List<int>> completer = Completer<List<int>>();
         // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
@@ -1447,7 +1448,7 @@ class _HomeState extends State<Home>{
         List<String> Response = [];
         await port.writeBytesFromUint8List(Uint8List.fromList(intList));
         // Thiết lập thời gian chờ là 5 giây
-        const timeoutDuration = Duration(seconds: 5);
+        const timeoutDuration = Duration(seconds: 2);
         // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
         Completer<List<int>> completer = Completer<List<int>>();
         // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
@@ -1488,12 +1489,13 @@ class _HomeState extends State<Home>{
           if(Response[0] == '01' && Response[1] == '21' && Response[6] == '02' && Response[2] == '02'){
             if(sum == Response[5]){
               if(Response[3] == '01'){
-                const timeoutDuration = Duration(seconds: 5);
+                const timeoutDuration = Duration(seconds: 2);
                 // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
                 Completer<List<int>> completer1 = Completer<List<int>>();
                 // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
                 Timer timeoutTimer;
                 if((write_data!.length/n).toInt() > 0){
+                  bool check_write_only = true;
                   for(int i = 0; i < ((write_data.length)/n).toInt() ;i++){
 
                     int number = (i*n);
@@ -1614,6 +1616,7 @@ class _HomeState extends State<Home>{
                               return;
                             }
                             if(Response23[3] == '00'){
+                              check_write_only = false;
                               Navigator.of(context).pop();
                               showDialog(
                                 context: context,
@@ -1636,6 +1639,7 @@ class _HomeState extends State<Home>{
                             }
                             print("Response Hoàn thành");
                           }else{
+                            check_write_only = false;
                             Navigator.of(context).pop();
                             showDialog(
                               context: context,
@@ -1659,7 +1663,7 @@ class _HomeState extends State<Home>{
                         }
                         else{
                           Navigator.of(context).pop();
-
+                          check_write_only = false;
                           showDialog(
                             context: context,
                             builder: (BuildContext context) {
@@ -1682,6 +1686,7 @@ class _HomeState extends State<Home>{
 
                       }).catchError((error) {
                         print('Error: $error');
+                        check_write_only = false;
                         Navigator.of(context).pop();
                         showDialog(
                           context: context,
@@ -1828,6 +1833,7 @@ class _HomeState extends State<Home>{
                                 );
                               }
                               else{
+                                check_write_only = false;
                                 Navigator.of(context).pop();
                                 showDialog(
                                   context: context,
@@ -1850,6 +1856,7 @@ class _HomeState extends State<Home>{
                               }
                               print("Response Hoàn thành");
                             }else{
+                              check_write_only = false;
                               Navigator.of(context).pop();
                               showDialog(
                                 context: context,
@@ -1872,6 +1879,7 @@ class _HomeState extends State<Home>{
                             }
                           }
                           else{
+                            check_write_only = false;
                             Navigator.of(context).pop();
                             showDialog(
                               context: context,
@@ -1894,6 +1902,7 @@ class _HomeState extends State<Home>{
                           }
 
                         }).catchError((error) {
+                          check_write_only = false;
                           print('Error: $error');
                           Navigator.of(context).pop();
                           showDialog(
@@ -1919,7 +1928,9 @@ class _HomeState extends State<Home>{
                         completer1 = Completer<List<int>>();
                         timeoutTimer.cancel();
                       }
-
+                    }
+                    if(check_write_only == false){
+                      return;
                     }
                   }
                 }

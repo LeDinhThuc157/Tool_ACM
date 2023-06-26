@@ -102,7 +102,7 @@ class _NotificationDialogWriteState extends State<NotificationDialogWrite> {
         List<String> Response = [];
         await port.writeBytesFromUint8List(Uint8List.fromList(intList));
         // Thiết lập thời gian chờ là 5 giây
-        const timeoutDuration = Duration(seconds: 5);
+        const timeoutDuration = Duration(seconds: 2);
         // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
         Completer<List<int>> completer = Completer<List<int>>();
         // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
@@ -144,12 +144,13 @@ class _NotificationDialogWriteState extends State<NotificationDialogWrite> {
             if(Response[0] == '01' && Response[1] == '21' && Response[6] == '02' && Response[2] == '02'){
               if(sum == Response[5]){
                 if(Response[3] == '01'){
-                  const timeoutDuration = Duration(seconds: 5);
+                  const timeoutDuration = Duration(seconds: 2);
                   // Tạo một Completer để theo dõi khi nào nhận được dữ liệu
                   Completer<List<int>> completer1 = Completer<List<int>>();
                   // Tạo một Timer để hủy bỏ nếu không nhận được dữ liệu sau thời gian chờ
                   Timer timeoutTimer;
                   if((write_data!.length/n).toInt() > 0){
+                    bool check_write_only = true;
                     for(int i = 0; i < ((write_data.length)/n).toInt() ;i++){
                       int number = (i*n);
                       // Chuyển đổi số thành mã hex 2 byte
@@ -244,30 +245,34 @@ class _NotificationDialogWriteState extends State<NotificationDialogWrite> {
                             S = S - 256;
                           }
                           String sum = S.toRadixString(16);
+                          print("xxx: $Response23");
                           if(Response23[0] == '01' && Response23[1] == '23' && Response23[6] == '02' && Response23[2] == '02'){
                             if(sum == Response23[5]){
                               if(Response23[3] == '01'){
                                 check_write = true;
                               }
                               if(Response23[3] == '00'){
+                                check_write_only = false;
                                 check_write = false;
                                 Error_Write = 'Mảng $lan: Ghi không thành công';
                                 return;
                               }
                             }else{
-
+                              check_write_only = false;
                               check_write = false;
                               Error_Write = 'Mảng $lan: Checksum sai';
                               return;
                             }
                           }
                           else{
+                            check_write_only = false;
                             check_write = false;
                             Error_Write = 'Mảng $lan: Bản tin sai cú pháp';
                             return;
                           }
 
                         }).catchError((error) {
+                          check_write_only = false;
                           if(error == 'Timeout'){
                             check_write = false;
                             Error_Write = 'Mảng $lan: $error';
@@ -376,31 +381,35 @@ class _NotificationDialogWriteState extends State<NotificationDialogWrite> {
                               S = S - 256;
                             }
                             String sum = S.toRadixString(16);
+                            print("xxx: $Response23");
                             if(Response23[0] == '01' && Response23[1] == '23' && Response23[6] == '02' && Response23[2] == '02'){
                               if(sum == Response23[5]){
                                 if(Response23[3] == '01'){
                                   check_write = true;
                                 }
                                 else{
+                                  check_write_only = false;
                                   check_write = false;
                                   Error_Write = 'Mảng $lan: Ghi không thành công';
                                   return;
                                 }
                                 print("Response Hoàn thành");
                               }else{
+                                check_write_only = false;
                                 check_write = false;
                                 Error_Write = 'Mảng $lan: Checksum sai';
                                 return;
                               }
                             }
                             else{
-
+                              check_write_only = false;
                               check_write = false;
                               Error_Write = 'Mảng $lan: Bản tin sai cú pháp';
                               return;
                             }
 
                           }).catchError((error) {
+                            check_write_only = false;
                             check_write = false;
                             Error_Write = 'Mảng $lan: $error';
                             return;
@@ -410,6 +419,10 @@ class _NotificationDialogWriteState extends State<NotificationDialogWrite> {
                           timeoutTimer.cancel();
                         }
 
+                      }
+                      if(check_write_only == false){
+                        print("Đã gặp lỗi");
+                        return;
                       }
                     }
                   }
@@ -510,6 +523,7 @@ class _NotificationDialogWriteState extends State<NotificationDialogWrite> {
                           S = S - 256;
                         }
                         String sum = S.toRadixString(16);
+                        print("xxx: $List_hex");
                         if(List_hex[0] == '01' && List_hex[1] == '23' && List_hex[6] == '02' && List_hex[2] == '02'){
                           if(sum == List_hex[List_hex.length-2]){
                             if(List_hex[3] == '01'){
